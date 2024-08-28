@@ -1,0 +1,30 @@
+---
+name: cinq-ci
+
+on:
+  push:
+    paths:
+      - ".github/workflows/ci.yml"
+      - "**.zig"
+  schedule:
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }} 
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Zig compiler
+        uses: korandoru/setup-zig@v1
+        with:
+          zig-version: master
+      - name: Print Zig version
+        run: zig version
+      - name: Build
+        run: zig build --summary all
