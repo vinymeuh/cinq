@@ -123,7 +123,7 @@ pub fn gtploop(self: *Self) !void {
                     try self.printKo(id, "invalid color", .{});
                     continue;
                 };
-                const vertex = parseArgVertex(&tokens) catch {
+                const vertex = parseArgVertex(self.allocator, &tokens) catch {
                     try self.printKo(id, "invalid color or coordinate", .{});
                     continue;
                 };
@@ -163,7 +163,7 @@ pub fn gtploop(self: *Self) !void {
                     try self.printKo(id, "invalid color", .{});
                     continue;
                 };
-                const vertex = parseArgVertex(&tokens) catch {
+                const vertex = parseArgVertex(self.allocator, &tokens) catch {
                     try self.printKo(id, "invalid color or coordinate", .{});
                     continue;
                 };
@@ -266,6 +266,15 @@ fn parseArgColor(allocator: std.mem.Allocator, tokens: *CommandLineTokens) !go.C
     const color_str = tokens.next() orelse {
         return error.InvalidArgument;
     };
+
+    if (color_str.len == 1) {
+        switch (color_str[0]) {
+            'B', 'b' => return go.Color.black,
+            'W', 'w' => return go.Color.white,
+            else => {},
+        }
+    }
+
     const lower_str = try std.ascii.allocLowerString(allocator, color_str);
     defer allocator.free(lower_str);
     const color = std.meta.stringToEnum(go.Color, lower_str) orelse {
@@ -274,20 +283,23 @@ fn parseArgColor(allocator: std.mem.Allocator, tokens: *CommandLineTokens) !go.C
     return color;
 }
 
-fn parseArgVertex(tokens: *CommandLineTokens) !go.Vertex {
+fn parseArgVertex(allocator: std.mem.Allocator, tokens: *CommandLineTokens) !go.Vertex {
     const vertex_str = tokens.next() orelse {
         return error.InvalidArgument;
     };
 
-    if (std.mem.eql(u8, vertex_str, "pass")) {
+    const lower_str = try std.ascii.allocLowerString(allocator, vertex_str);
+    defer allocator.free(lower_str);
+
+    if (std.mem.eql(u8, lower_str, "pass")) {
         return .pass;
     }
 
-    if (vertex_str.len < 2 or vertex_str.len > 3) {
+    if (lower_str.len < 2 or lower_str.len > 3) {
         return error.InvalidArgument;
     }
 
-    const letter = std.ascii.toLower(vertex_str[0]);
+    const letter = lower_str[0];
     var col1: usize = undefined;
     if (letter >= 'a' and letter < 'i') {
         col1 = 1 + std.ascii.toLower(letter) - 'a';
