@@ -151,7 +151,7 @@ pub fn gtploop(self: *Self) !void {
             .list_commands => {
                 try self.out.writeAll("= ");
                 inline for (std.meta.fields(CommandName)) |f| {
-                    try self.out.print("{s}\n", .{@typeInfo(CommandName).Enum.fields[f.value].name});
+                    try self.out.print("{s}\n", .{@typeInfo(CommandName).@"enum".fields[f.value].name});
                 }
                 try self.out.writeAll("\n");
             },
