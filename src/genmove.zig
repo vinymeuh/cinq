@@ -42,7 +42,7 @@ pub const RandomBot = struct {
             for (1..board.size + 1) |col| {
                 const xpoint = col + row * board.xsize;
                 const vertex = go.Vertex{ .play = .{ .col = col, .row = row } };
-                if (board.isLegal(color, vertex)) {
+                if (board.isLegal(color, vertex) and !board.isAnEye(color, vertex.play)) {
                     legal_xpoints[legal_count] = xpoint;
                     legal_count += 1;
                 }

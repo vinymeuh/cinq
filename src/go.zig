@@ -259,6 +259,49 @@ pub const Board = struct {
         return true;
     }
 
+    pub fn isAnEye(self: *Board, color: Color, coord: Coordinate) bool {
+        const xpoint = coord.col + coord.row * self.xsize;
+        if (self.grid[xpoint] != .none) {
+            return false;
+        }
+
+        // we must occupy all 4 liberties
+        for (self.xNeighbors(xpoint)) |neighbor| {
+            switch (self.grid[neighbor]) {
+                .none => return false,
+                .stone => {
+                    if (self.grid[neighbor].stone != color) {
+                        return false;
+                    }
+                },
+                .offboard => {},
+            }
+        }
+
+        // for diagonals, it depends if we are on edge/corner or not
+        var diag_offboard: usize = 0;
+        var diag_mine: usize = 0;
+        for (self.xDiagNeighbors(xpoint)) |neighbor| {
+            switch (self.grid[neighbor]) {
+                .none => {},
+                .stone => {
+                    if (self.grid[neighbor].stone == color) {
+                        diag_mine += 1;
+                    }
+                },
+                .offboard => {
+                    diag_offboard += 1;
+                },
+            }
+        }
+
+        if (diag_offboard > 0) { // on edge/corner we must occupy all remaining diagonals
+            return (diag_offboard + diag_mine) == 4;
+        }
+
+        return diag_mine >= 3;
+    }
+
     inline fn xNeighbors(self: *Board, xpoint: usize) [4]usize {
         std.debug.assert(self.grid[xpoint] != .offboard);
         const xp: isize = @intCast(xpoint);
@@ -267,6 +310,17 @@ pub const Board = struct {
             @as(usize, @bitCast(xp + 1)),
             @as(usize, @bitCast(xp - 1 * @as(isize, @intCast(self.xsize)))),
             @as(usize, @bitCast(xp + @as(isize, @intCast(self.xsize)))),
+        };
+    }
+
+    inline fn xDiagNeighbors(self: *Board, xpoint: usize) [4]usize {
+        std.debug.assert(self.grid[xpoint] != .offboard);
+        const xp: isize = @intCast(xpoint);
+        return [4]usize{
+            @as(usize, @bitCast(xp - 1 * @as(isize, @intCast(self.xsize)) - 1)),
+            @as(usize, @bitCast(xp - 1 * @as(isize, @intCast(self.xsize)) + 1)),
+            @as(usize, @bitCast(xp + @as(isize, @intCast(self.xsize)) - 1)),
+            @as(usize, @bitCast(xp + @as(isize, @intCast(self.xsize)) + 1)),
         };
     }
 
