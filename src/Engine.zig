@@ -23,7 +23,7 @@ pub fn init(allocator: std.mem.Allocator) Self {
         .board = undefined,
         .allocator = allocator,
         .out = std.io.getStdOut().writer(),
-        .bot = genmove.RandomBot.init(),
+        .bot = undefined,
         .move_history = undefined,
     };
 }
@@ -52,6 +52,10 @@ const CommandName = enum {
 pub fn gtploop(self: *Self) !void {
     self.board = try go.Board.create(self.allocator, go.Board.DEFAULT_SIZE);
     self.move_history = try std.ArrayList(Move).initCapacity(self.allocator, 500);
+
+    var seed: u64 = undefined;
+    try std.posix.getrandom(std.mem.asBytes(&seed));
+    self.bot = genmove.RandomBot.init(seed);
 
     const stdin = std.io.getStdIn().reader();
     var line_buf = std.ArrayList(u8).init(self.allocator);

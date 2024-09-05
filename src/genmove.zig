@@ -24,13 +24,13 @@ pub const Response = union(ResponseTag) {
 };
 
 pub const RandomBot = struct {
-    rand: std.Random,
+    seed: u64,
+    prng: std.Random.Xoshiro256,
 
-    pub fn init() RandomBot {
-        const seed: u64 = @abs(std.time.timestamp());
-        var prng = std.Random.DefaultPrng.init(seed);
+    pub fn init(init_s: u64) RandomBot {
         return RandomBot{
-            .rand = prng.random(),
+            .seed = init_s,
+            .prng = std.Random.DefaultPrng.init(init_s),
         };
     }
 
@@ -51,11 +51,14 @@ pub const RandomBot = struct {
 
         if (legal_count == 0) {
             return Response{ .vertex = .pass };
+        } else if (legal_count == 1) {
+            const xpoint = legal_xpoints[0];
+            return Response{ .vertex = go.Vertex{ .play = board.asCoordinate(xpoint) } };
+        } else {
+            const choice = self.prng.random().uintLessThan(usize, legal_count - 1);
+            std.debug.print("choice = {d}, legal_count = {d}\n", .{ choice, legal_count });
+            const xpoint = legal_xpoints[choice];
+            return Response{ .vertex = go.Vertex{ .play = board.asCoordinate(xpoint) } };
         }
-
-        const choice = self.rand.uintLessThan(usize, legal_count);
-        const xpoint = legal_xpoints[choice];
-
-        return Response{ .vertex = go.Vertex{ .play = board.asCoordinate(xpoint) } };
     }
 };
